@@ -41,7 +41,7 @@ public class SwipeCellView extends FrameLayout {
 
     protected void initView() {
         dragHandler = new ViewDragHandler(this);
-        dragHelper = ViewDragHelper.create(this, dragHandler);
+        dragHelper = ViewDragHelper.create(this, 0.8f, dragHandler);
         dragHandler.setDragHelper(dragHelper);
     }
 
@@ -52,6 +52,7 @@ public class SwipeCellView extends FrameLayout {
         View view = LayoutInflater.from(getContext())
                 .inflate(layoutId, this, false);
         view.setLayoutParams(params);
+        view.setClickable(true);
         addView(view);
 
         dragHandler.setCaptureView(view);
@@ -70,6 +71,10 @@ public class SwipeCellView extends FrameLayout {
         addView(delView, 0);
 
         dragHandler.setMaxSlide(slide);
+    }
+
+    public View getDelView() {
+        return getChildAt(0);
     }
 
 
@@ -101,6 +106,8 @@ public class SwipeCellView extends FrameLayout {
 
         public void setDragHelper(ViewDragHelper dragHelper) {
             this.dragHelper = dragHelper;
+            float density = parent.getContext().getResources().getDisplayMetrics().density;
+            this.dragHelper.setMinVelocity(density * 400);
         }
 
         @Override
@@ -113,6 +120,18 @@ public class SwipeCellView extends FrameLayout {
             return child == captureView;
         }
 
+
+        @Override
+        public void onViewPositionChanged(View changedView, int left, int top, int dx, int dy) {
+            if (dx != 0) {
+                parent.getParent().requestDisallowInterceptTouchEvent(true);
+            }
+        }
+
+        @Override
+        public void onViewDragStateChanged(int state) {
+            super.onViewDragStateChanged(state);
+        }
 
         @Override
         public int clampViewPositionHorizontal(@NonNull View child, int left, int dx) {
@@ -131,6 +150,10 @@ public class SwipeCellView extends FrameLayout {
             return 0;
         }
 
+        @Override
+        public int getViewHorizontalDragRange(View child) {
+            return maxSlide;
+        }
 
         @Override
         public void onViewReleased(@NonNull View releasedChild, float xvel, float yvel) {
@@ -138,11 +161,11 @@ public class SwipeCellView extends FrameLayout {
 
             int left = Math.abs(releasedChild.getLeft());
             if (state == State.SPREAD) { //直接关闭
-//                if (left <= maxSlide / 5 * 4) {
-                dragHelper.settleCapturedViewAt(0, 0);
-//                } else {
-//                    dragHelper.settleCapturedViewAt(-maxSlide, 0);
-//                }
+                if (left <= maxSlide / 5 * 4) {
+                    dragHelper.settleCapturedViewAt(0, 0);
+                } else {
+                    dragHelper.settleCapturedViewAt(-maxSlide, 0);
+                }
             }
             if (state == State.CLOSE) {
                 if (left >= maxSlide / 5) {
@@ -165,7 +188,6 @@ public class SwipeCellView extends FrameLayout {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        dragHelper.processTouchEvent(event);
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 x = event.getX();
@@ -174,8 +196,8 @@ public class SwipeCellView extends FrameLayout {
             case MotionEvent.ACTION_MOVE:
                 float offX = getX() - x;
                 float offY = getY() - y;
-
-                if (Math.abs(offX / offY) > 0.9f) {
+//                if (Math.abs(offX / offY) > 0.9f) {
+                if (Math.abs(offX) > Math.abs(offY)) {
                     getParent().requestDisallowInterceptTouchEvent(true);
                 }
                 x = getX();
@@ -183,9 +205,9 @@ public class SwipeCellView extends FrameLayout {
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                getParent().requestDisallowInterceptTouchEvent(false);
                 break;
         }
+        dragHelper.processTouchEvent(event);
         return true;
     }
 

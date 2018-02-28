@@ -10,6 +10,8 @@ import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
 import android.widget.ImageView;
 
+import java.util.ArrayList;
+
 /**
  * Created by wan7451 on 2018/2/27.
  * desc:
@@ -18,9 +20,16 @@ import android.widget.ImageView;
 public class SwipeCellAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private Context context;
+    private ArrayList<String> data;
+    private int d10;
 
     public SwipeCellAdapter(Context context) {
         this.context = context;
+        data = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            data.add("");
+        }
+        d10 = SwipeCellView.dip2px(context, 10);
     }
 
     @Override
@@ -29,8 +38,7 @@ public class SwipeCellAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
-
-
+        params.setMargins(d10, 0, d10, 0);
         ImageView delView = new ImageView(context);
         delView.setBackgroundColor(0xFFE52C1A);
         delView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
@@ -49,13 +57,21 @@ public class SwipeCellAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     }
 
     @Override
-    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
+        SwipeCellView swipeCellView = (SwipeCellView) holder.itemView;
+        swipeCellView.getDelView().setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                data.remove(position);
+                notifyItemRemoved(position);
+                notifyItemRangeChanged(position, data.size() - position);
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
-        return 20;
+        return data.size();
     }
 
 
